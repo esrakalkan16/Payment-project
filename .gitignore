@@ -1,0 +1,20 @@
+## Build results
+bin/
+obj/
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## VSCode / VS files
+.vscode/
+.vs/
+
+## Others
+*.log
+*.tmp
+*.bak
+*.db
+*.cache

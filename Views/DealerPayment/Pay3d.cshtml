@@ -1,78 +1,109 @@
-﻿@model Payment_project.Models.PaymentDealerRequest
+﻿@model Payment_project.PaymentCore.Models.PaymentDealerRequest
 
 @{
     ViewBag.Title = "3D Secure Ödeme";
 }
 
-<h2>3D Secure Ödeme Formu</h2>
+<h2 style="text-align:center; margin-bottom:30px;">💳 3D Güvenli Ödeme</h2>
 
 <style>
-    .payment-form {
+    .form-container {
         display: flex;
-        gap: 40px;
-        margin-top: 20px;
+        gap: 30px;
+        justify-content: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
     }
 
-    .form-column {
+    .card-box {
         flex: 1;
+        min-width: 320px;
+        max-width: 500px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 25px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 15px;
     }
 
-        .form-column label {
-            font-weight: bold;
-            margin-bottom: 3px;
+        .card-box h3 {
+            margin-bottom: 10px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
         }
+
+    label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #555;
+    }
 
     input[type="text"],
     input[type="number"] {
-        padding: 8px;
+        padding: 10px;
         border: 1px solid #ccc;
-        border-radius: 4px;
+        border-radius: 5px;
+        font-size: 14px;
     }
 
     .submit-button {
-        margin-top: 20px;
-        padding: 10px 20px;
-        background-color: #4CAF50;
+        margin-top: 30px;
+        padding: 12px 25px;
+        background-color: #0066cc;
         color: white;
         font-weight: bold;
+        font-size: 16px;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
     }
 
         .submit-button:hover {
-            background-color: #45a049;
+            background-color: #004999;
         }
+
+    .error-box {
+        margin-top: 25px;
+        color: red;
+        text-align: center;
+    }
 </style>
 
 @using (Html.BeginForm("Pay3d", "DealerPayment", FormMethod.Post))
 {
-    <div class="payment-form">
-        <div class="form-column">
+    <div class="form-container">
+        <!-- Kart Bilgileri -->
+        <div class="card-box">
+            <h3>Kart Bilgileri</h3>
             <label>Kart Sahibinin Adı</label>
             @Html.TextBoxFor(m => m.CardHolderFullName)
 
             <label>Kart Numarası</label>
             @Html.TextBoxFor(m => m.CardNumber)
 
-            <label>Ay (ExpMonth)</label>
+            <label>Son Kullanma Ay</label>
             @Html.TextBoxFor(m => m.ExpMonth)
 
-            <label>Yıl (ExpYear)</label>
+            <label>Son Kullanma Yıl</label>
             @Html.TextBoxFor(m => m.ExpYear)
 
             <label>CVC</label>
             @Html.TextBoxFor(m => m.CvcNumber)
         </div>
 
-        <div class="form-column">
+        <!-- Ödeme Detayları -->
+        <div class="card-box">
+            <h3>Ödeme Bilgileri</h3>
             <label>Tutar</label>
             @Html.TextBoxFor(m => m.Amount)
 
-            <label>Para Birimi (Currency)</label>
+            <label>Para Birimi</label>
             @Html.TextBoxFor(m => m.Currency, new { @Value = "TL" })
 
             <label>Taksit Sayısı</label>
@@ -81,17 +112,17 @@
             <label>IP Adresi</label>
             @Html.TextBoxFor(m => m.ClientIP, new { @Value = "127.0.0.1" })
 
-            <label>Redirect URL</label>
-            @Html.TextBoxFor(m => m.RedirectUrl, new { @Value = "https://localhost:44300/DealerPayment/PayResult" })
+            <label>Yönlendirme Linki (RedirectUrl)</label>
+            @Html.TextBoxFor(m => m.RedirectUrl, new { @Value = "https://localhost:44355/DealerPayment/PayResult" })
         </div>
     </div>
 
-    <button type="submit" class="submit-button">Ödemeyi Başlat</button>
+    <button type="submit" class="submit-button">✅ Ödemeyi Başlat</button>
 }
 
 @if (ViewBag.ErrorMessage != null)
 {
-    <div style="color: red; margin-top: 20px;">
+    <div class="error-box">
         @ViewBag.ErrorMessage
     </div>
 }

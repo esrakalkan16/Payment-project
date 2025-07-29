@@ -1,0 +1,97 @@
+﻿@model Payment_project.Models.PaymentDealerRequest
+
+@{
+    ViewBag.Title = "3D Secure Ödeme";
+}
+
+<h2>3D Secure Ödeme Formu</h2>
+
+<style>
+    .payment-form {
+        display: flex;
+        gap: 40px;
+        margin-top: 20px;
+    }
+
+    .form-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .form-column label {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+    input[type="text"],
+    input[type="number"] {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .submit-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+</style>
+
+@using (Html.BeginForm("Pay3d", "DealerPayment", FormMethod.Post))
+{
+    <div class="payment-form">
+        <div class="form-column">
+            <label>Kart Sahibinin Adı</label>
+            @Html.TextBoxFor(m => m.CardHolderFullName)
+
+            <label>Kart Numarası</label>
+            @Html.TextBoxFor(m => m.CardNumber)
+
+            <label>Ay (ExpMonth)</label>
+            @Html.TextBoxFor(m => m.ExpMonth)
+
+            <label>Yıl (ExpYear)</label>
+            @Html.TextBoxFor(m => m.ExpYear)
+
+            <label>CVC</label>
+            @Html.TextBoxFor(m => m.CvcNumber)
+        </div>
+
+        <div class="form-column">
+            <label>Tutar</label>
+            @Html.TextBoxFor(m => m.Amount)
+
+            <label>Para Birimi (Currency)</label>
+            @Html.TextBoxFor(m => m.Currency, new { @Value = "TL" })
+
+            <label>Taksit Sayısı</label>
+            @Html.TextBoxFor(m => m.InstallmentNumber)
+
+            <label>IP Adresi</label>
+            @Html.TextBoxFor(m => m.ClientIP, new { @Value = "127.0.0.1" })
+
+            <label>Redirect URL</label>
+            @Html.TextBoxFor(m => m.RedirectUrl, new { @Value = "https://localhost:44300/DealerPayment/PayResult" })
+        </div>
+    </div>
+
+    <button type="submit" class="submit-button">Ödemeyi Başlat</button>
+}
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div style="color: red; margin-top: 20px;">
+        @ViewBag.ErrorMessage
+    </div>
+}

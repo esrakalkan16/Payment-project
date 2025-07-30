@@ -19,6 +19,16 @@ namespace Payment_project.Controllers
         [HttpPost]
         public async Task<ActionResult> Pay3d(PaymentDealerRequest model)
         {
+
+            BakiyemPaymentService Client = new BakiyemPaymentService();
+            if (!Client.StartClient("https://service.testmoka.com","","","").IsSuccessful) { return Json("Ödeme servisine bağlanılamadı!"); }
+
+
+
+
+            var Response = Client.Start3DPaymentAsync();
+
+
             var dealerCode = "250";
             var username = "testuser";
             var password = "KLRSMGLSX";

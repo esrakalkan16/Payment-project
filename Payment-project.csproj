@@ -222,6 +222,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\DealerPayment\Pay3d.cshtml" />
     <Content Include="Views\DealerPayment\PayResult.cshtml" />
+    <Content Include="Views\DealerPayment\TestClient.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -1,127 +1,385 @@
 ﻿@model PaymentCore.Services.BakiyemPaymentService.PaymentDealerRequest
 @{
-    ViewBag.Title = "3D Secure Ödeme";
+    ViewBag.Title = "Ödeme İşlemi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2 style="text-align:center; margin-bottom:30px;">💳 3D Güvenli Ödeme</h2>
+<div class="payment-page">
+    <div class="container">
+        <div class="page-header">
+            <h1>Ödeme İşlemi</h1>
+            <p>Güvenli ödeme için gerekli bilgileri doldurunuz</p>
+        </div>
 
-<style>
-    .form-container {
-        display: flex;
-        gap: 30px;
-        justify-content: center;
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
+        @using (Html.BeginForm("Pay3d", "DealerPayment", FormMethod.Post, new { @class = "payment-form" }))
+        {
+            <div class="form-sections">
+                <!-- Kart Bilgileri Bölümü -->
+                <div class="form-section">
+                    <h2>Kart Bilgileri</h2>
 
-    .card-box {
-        flex: 1;
-        min-width: 320px;
-        max-width: 500px;
-        background-color: #ffffff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-radius: 10px;
-        padding: 25px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
+                    <div class="form-group">
+                        <label for="CardHolderFullName">Kart Sahibinin Adı Soyadı *</label>
+                        @Html.TextBoxFor(m => m.CardHolderFullName, new
+                        {
+                            @class = "form-control",
+                            @placeholder = "Ad Soyad",
+                            @required = "required"
+                        })
+                    </div>
 
-        .card-box h3 {
-            margin-bottom: 10px;
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
+                    <div class="form-group">
+                        <label for="CardNumber">Kart Numarası *</label>
+                        @Html.TextBoxFor(m => m.CardNumber, new
+                        {
+                            @class = "form-control card-number",
+                            @placeholder = "0000 0000 0000 0000",
+                            @required = "required",
+                            @maxlength = "19"
+                        })
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-half">
+                            <label for="ExpMonth">Son Kullanma Ay *</label>
+                            @Html.DropDownListFor(m => m.ExpMonth,
+                                new SelectList(Enumerable.Range(1, 12).Select(x => new
+                                     {
+                                    Value = x.ToString("D2"),
+                                    Text = x.ToString("D2")
+                                }), "Value", "Text", Model?.ExpMonth),
+                                "Ay",
+                                new { @class = "form-control", @required = "required" })
+                        </div>
+                        <div class="form-group col-half">
+                            <label for="ExpYear">Son Kullanma Yıl *</label>
+                            @Html.DropDownListFor(m => m.ExpYear,
+                                new SelectList(Enumerable.Range(DateTime.Now.Year, 15).Select(x => new
+                                     {
+                                    Value = x.ToString(),
+                                    Text = x.ToString()
+                                }), "Value", "Text", Model?.ExpYear),
+                                "Yıl",
+                                new { @class = "form-control", @required = "required" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="CvcNumber">Güvenlik Kodu (CVC) *</label>
+                        @Html.TextBoxFor(m => m.CvcNumber, new
+                        {
+                            @class = "form-control cvc-input",
+                            @placeholder = "000",
+                            @required = "required",
+                            @maxlength = "4"
+                        })
+                    </div>
+                </div>
+
+                <!-- Ödeme Detayları Bölümü -->
+                <div class="form-section">
+                    <h2>Ödeme Detayları</h2>
+
+                    <div class="form-row">
+                        <div class="form-group col-two-thirds">
+                            <label for="Amount">Tutar *</label>
+                            @Html.TextBoxFor(m => m.Amount, new
+                            {
+                                @class = "form-control amount-input",
+                                @placeholder = "0,00",
+                                @required = "required",
+                                @type = "number",
+                                @step = "0.01",
+                                @min = "0.01"
+                            })
+                        </div>
+                        <div class="form-group col-one-third">
+                            <label for="Currency">Para Birimi</label>
+                            @Html.DropDownListFor(m => m.Currency,
+                                new SelectList(new[] {
+                                    new { Value = "TL", Text = "TL" },
+                                    new { Value = "USD", Text = "USD" },
+                                    new { Value = "EUR", Text = "EUR" }
+                                }, "Value", "Text", Model?.Currency ?? "TL"),
+                                new { @class = "form-control" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="InstallmentNumber">Taksit Seçeneği</label>
+                        @Html.DropDownListFor(m => m.InstallmentNumber,
+                            new SelectList(new[] {
+                                new { Value = 1, Text = "Peşin" },
+                                new { Value = 2, Text = "2 Taksit" },
+                                new { Value = 3, Text = "3 Taksit" },
+                                new { Value = 4, Text = "4 Taksit" },
+                                new { Value = 5, Text = "5 Taksit" },
+                                new { Value = 6, Text = "6 Taksit" }
+                            }, "Value", "Text", Model?.InstallmentNumber ?? 1),
+                            new { @class = "form-control" })
+                    </div>
+
+                    <!-- Hidden fields -->
+                    @Html.HiddenFor(m => m.ClientIP)
+                    @Html.HiddenFor(m => m.RedirectUrl)
+                    @Html.HiddenFor(m => m.DealerPaymentId)
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <span class="btn-icon">🔒</span>
+                    <span class="btn-text">Ödeme Yap</span>
+                </button>
+            </div>
+
+            <div class="security-notice">
+                <p><strong>Güvenlik Bildirimi:</strong> Bu işlem 256-bit SSL şifreleme ve 3D Secure teknolojisi ile korunmaktadır.</p>
+            </div>
         }
 
-    label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: #555;
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-error">
+                <strong>Hata:</strong> @Html.Raw(ViewBag.ErrorMessage)
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .payment-page {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        padding: 20px 0;
     }
 
-    input[type="text"],
-    input[type="number"] {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+        .page-header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+        }
+
+        .page-header p {
+            color: #6c757d;
+            font-size: 16px;
+            margin: 0;
+        }
+
+    .payment-form {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .form-sections {
+        padding: 0;
+    }
+
+    .form-section {
+        padding: 30px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-section h2 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 25px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        align-items: end;
+    }
+
+    .col-half {
+        flex: 1;
+    }
+
+    .col-two-thirds {
+        flex: 2;
+    }
+
+    .col-one-third {
+        flex: 1;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
         font-size: 14px;
     }
 
-    .submit-button {
-        margin-top: 30px;
-        padding: 12px 25px;
-        background-color: #0066cc;
-        color: white;
-        font-weight: bold;
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
         font-size: 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        background-color: #fff;
     }
 
-        .submit-button:hover {
-            background-color: #004999;
+        .form-control:focus {
+            outline: 0;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
 
-    .error-box {
-        margin-top: 25px;
-        color: red;
+    .card-number {
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+    }
+
+    .cvc-input {
+        max-width: 120px;
+    }
+
+    .amount-input {
+        font-size: 18px;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .form-actions {
+        padding: 30px;
+        background-color: #f8f9fa;
         text-align: center;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: white;
+        padding: 15px 40px;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.15s ease-in-out;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .btn-icon {
+        font-size: 20px;
+    }
+
+    .security-notice {
+        padding: 20px 30px;
+        background-color: #e7f3ff;
+        color: #0c5460;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .alert {
+        padding: 15px 30px;
+        margin: 20px 0;
+        border-radius: 4px;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        border: 1px solid #f1aeb5;
+        color: #721c24;
+    }
+
+    @@media (max-width: 768px) {
+        .container {
+            padding: 0 15px;
+        }
+
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-section {
+            padding: 20px;
+        }
+
+        .page-header {
+            padding: 20px;
+        }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
     }
 </style>
 
-@using (Html.BeginForm("Pay3d", "DealerPayment", FormMethod.Post))
-{
-    <div class="form-container">
-        <!-- Kart Bilgileri -->
-        <div class="card-box">
-            <h3>Kart Bilgileri</h3>
-            <label>Kart Sahibinin Adı</label>
-            @Html.TextBoxFor(m => m.CardHolderFullName)
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Kart numarası formatla
+        const cardInput = document.querySelector('.card-number');
+        if (cardInput) {
+            cardInput.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+                let formatted = value.replace(/(.{4})/g, '$1 ').trim();
+                if (formatted.length > 19) formatted = formatted.substring(0, 19);
+                e.target.value = formatted;
+            });
+        }
 
-            <label>Kart Numarası</label>
-            @Html.TextBoxFor(m => m.CardNumber)
+        // CVC sadece rakam
+        const cvcInput = document.querySelector('.cvc-input');
+        if (cvcInput) {
+            cvcInput.addEventListener('input', function (e) {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+        }
 
-            <label>Son Kullanma Ay</label>
-            @Html.TextBoxFor(m => m.ExpMonth)
-
-            <label>Son Kullanma Yıl</label>
-            @Html.TextBoxFor(m => m.ExpYear)
-
-            <label>CVC</label>
-            @Html.TextBoxFor(m => m.CvcNumber)
-        </div>
-
-        <!-- Ödeme Detayları -->
-        <div class="card-box">
-            <h3>Ödeme Bilgileri</h3>
-            <label>Tutar</label>
-            @Html.TextBoxFor(m => m.Amount)
-
-            <label>Para Birimi</label>
-            @Html.TextBoxFor(m => m.Currency, new { @Value = "TL" })
-
-            <label>Taksit Sayısı</label>
-            @Html.TextBoxFor(m => m.InstallmentNumber)
-
-            <label>IP Adresi</label>
-            @Html.TextBoxFor(m => m.ClientIP, new { @Value = "127.0.0.1" })
-
-            <label>Yönlendirme Linki (RedirectUrl)</label>
-            @Html.TextBoxFor(m => m.RedirectUrl, new { @Value = "https://localhost:44355/DealerPayment/PayResult" })
-        </div>
-    </div>
-
-    <button type="submit" class="submit-button">✅ Ödemeyi Başlat</button>
-}
-
-@if (ViewBag.ErrorMessage != null)
-{
-    <div class="error-box">
-        @ViewBag.ErrorMessage
-    </div>
-}
+        // Form submit kontrolü
+        document.querySelector('.payment-form').addEventListener('submit', function (e) {
+            const submitBtn = e.target.querySelector('.btn-primary');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">İşleniyor...</span>';
+            }
+        });
+    });
+</script>

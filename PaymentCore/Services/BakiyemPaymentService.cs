@@ -23,22 +23,37 @@ namespace PaymentCore.Services
         {
             try
             {
-                settings = new Settings() { AuthentionModel = CreateAuthention(DealerCode, Username, Password), BaseUrl = BaseUrl };
+                settings = new Settings()
+                {
+                    AuthentionModel = CreateAuthention(DealerCode, Username, Password),
+                    BaseUrl = BaseUrl,
+                    Connected = false 
+                };
 
-
-                var json = "{ " +
-    "\"PaymentDealerAuthentication\": {" + settings.AuthentionModel + "}," +
-    "\"PaymentDealerRequest\": {" +
-        "\"DealerPaymentId\": \"1\"," +
-        "\"OtherTrxCode\": \"\"" +
-    "}" +
-"}";
+  
+                var testRequest = new DealerPaymentServicePaymentRequest
+                {
+                    PaymentDealerAuthentication = settings.AuthentionModel,
+                    PaymentDealerRequest = new PaymentDealerRequest
+                    {
+                        DealerPaymentId = "1", 
+                        OtherTrxCode = ""
+                    }
+                };
 
                 string Url = settings.BaseUrl + "/PaymentDealer/DoDirectPaymentThreeD";
-                var response = Url.WithHeader("Content-Type", "application/json").PostStringAsync(json).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                var response = Url.WithHeader("Content-Type", "application/json")
+                                 .PostJsonAsync(testRequest)
+                                 .ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (response.StatusCode == 200)
                 {
+                  
+                    var result = response.GetJsonAsync<DealerPaymentServicePaymentResult>()
+                                        .ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    settings.Connected = true;
                     return new ResultModel
                     {
                         IsSuccessful = true,
@@ -47,16 +62,35 @@ namespace PaymentCore.Services
                 }
                 else
                 {
-                    settings.Connected = true;
+                    settings.Connected = false; 
                     return new ResultModel
                     {
                         IsSuccessful = false,
-                        ErrorMessage = "Servise ulaşılamadı"
+                        ErrorMessage = $"Servise ulaşılamadı. Status Code: {response.StatusCode}"
                     };
                 }
             }
+            catch (FlurlHttpException ex)
+            {
+              
+                string errorDetail = "";
+                try
+                {
+                    var errorResponse = ex.GetResponseStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                    errorDetail = $" - API Response: {errorResponse}";
+                }
+                catch { }
+
+                settings.Connected = false;
+                return new ResultModel
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = $"HTTP Hatası: {ex.Message}{errorDetail}"
+                };
+            }
             catch (Exception Ex)
             {
+                settings.Connected = false;
                 return new ResultModel
                 {
                     IsSuccessful = false,
@@ -78,20 +112,17 @@ namespace PaymentCore.Services
                     };
                 }
 
-
                 var requestBody = new DealerPaymentServicePaymentRequest
                 {
                     PaymentDealerAuthentication = settings.AuthentionModel,
                     PaymentDealerRequest = paymentRequest
                 };
 
-
                 string url = settings.BaseUrl + "/PaymentDealer/DoDirectPaymentThreeD";
                 var response = url
                     .WithHeader("Content-Type", "application/json")
                     .PostJsonAsync(requestBody)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
-
 
                 if (response.StatusCode == 200)
                 {
@@ -109,18 +140,24 @@ namespace PaymentCore.Services
                 return new ResultModel
                 {
                     IsSuccessful = false,
-                    ErrorMessage = "Ödeme işlemi başarısız."
+                    ErrorMessage = $"Ödeme işlemi başarısız. HTTP Status: {response.StatusCode}"
                 };
             }
             catch (FlurlHttpException ex)
             {
-                var error = ex.GetResponseJsonAsync<DealerPaymentServicePaymentResult>()
-                              .ConfigureAwait(false).GetAwaiter().GetResult();
+              
+                string errorDetail = "";
+                try
+                {
+                    var errorResponse = ex.GetResponseStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                    errorDetail = $" - API Yanıtı: {errorResponse}";
+                }
+                catch { }
 
                 return new ResultModel
                 {
                     IsSuccessful = false,
-                    ErrorMessage = error?.ResultMessage ?? "Sunucu hatası"
+                    ErrorMessage = $"Sunucu hatası: {ex.Message}{errorDetail}"
                 };
             }
             catch (Exception ex)
@@ -133,12 +170,10 @@ namespace PaymentCore.Services
             }
         }
 
-
-
         #endregion
 
         #region Validation
-        private ResultModel ValidatePaymentRequest(PaymentDealerRequest request)
+        public ResultModel ValidatePaymentRequest(PaymentDealerRequest request) 
         {
             // Kart bilgileri kontrolü (CardToken varsa kart bilgileri opsiyonel)
             if (string.IsNullOrEmpty(request.CardToken))
@@ -203,8 +238,6 @@ namespace PaymentCore.Services
             public object ResponseData { get; set; } = null;
         }
 
-
- 
         public class PaymentDealerAuthentication
         {
             public string DealerCode { get; set; }
@@ -212,8 +245,6 @@ namespace PaymentCore.Services
             public string Password { get; set; }
             public string CheckKey { get; set; }
         }
-
-
 
         public class DealerPaymentServicePaymentRequest
         {
@@ -242,6 +273,9 @@ namespace PaymentCore.Services
             public int RedirectType { get; set; } = 0; // 0: Ana sayfa, 1: IFrame
             public string OtherTrxCode { get; set; } // Kendi işlem kodunuz
 
+            // ✅ Eksik alan eklendi
+            public string DealerPaymentId { get; set; }
+
             // Ödeme Türü
             public int IsPreAuth { get; set; } = 0; // 0: Doğrudan çekim, 1: Ön provizyon
             public int IsPoolPayment { get; set; } = 0; // 0: Normal, 1: Havuz ödeme
@@ -256,7 +290,6 @@ namespace PaymentCore.Services
             public BuyerInformation BuyerInformation { get; set; }
         }
 
-
         public class BuyerInformation
         {
             public string BuyerFullName { get; set; }
@@ -269,12 +302,17 @@ namespace PaymentCore.Services
         {
             public string ResultCode { get; set; }
             public string ResultMessage { get; set; }
-            public string Data { get; set; }
+            public ThreeDData Data { get; set; } // ✅ string yerine object
             public string Exception { get; set; }
         }
-        #endregion
-    
 
+        // ✅ Yeni model eklendi
+        public class ThreeDData
+        {
+            public string Url { get; set; }
+            public string CodeForHash { get; set; }
+        }
+        #endregion
 
         #region Helpers
         public PaymentDealerAuthentication CreateAuthention(string DealerCode, string Username, string Password)
@@ -287,23 +325,22 @@ namespace PaymentCore.Services
                 CheckKey = SHA256Hash(DealerCode + "MK" + Username + "PD" + Password)
             };
         }
+
         public static string SHA256Hash(string input)
         {
-            using (var sha = SHA256.Create())
+            string hashKey = input; // dealerCode + "MK" + username + "PD" + password
+            System.Text.Encoding encoding = Encoding.UTF8;
+            byte[] plainBytes = encoding.GetBytes(hashKey);
+            System.Security.Cryptography.SHA256Managed sha256Engine = new SHA256Managed();
+            string hashedData = String.Empty;
+            byte[] hashedBytes = sha256Engine.ComputeHash(plainBytes, 0, encoding.GetByteCount(hashKey));
+            foreach (byte bit in hashedBytes)
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(input);
-                byte[] hash = sha.ComputeHash(bytes);
-
-                var builder = new StringBuilder();
-                foreach (var b in hash)
-                {
-                    builder.Append(b.ToString("x2"));
-                }
-
-                return builder.ToString();
+                hashedData += bit.ToString("x2");
             }
+            sha256Engine.Dispose(); // Memory leak'i önlemek için
+            return hashedData;
         }
-
 
         public static string GetUserFriendlyErrorMessage(string errorCode)
         {
@@ -357,6 +394,5 @@ namespace PaymentCore.Services
         }
 
         #endregion
-
     }
 }

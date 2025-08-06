@@ -1,9 +1,304 @@
 ﻿@{
     ViewBag.Title = "Ödeme Sonucu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Ödeme Sonucu</h2>
+<div class="result-page">
+    <div class="container">
+        <div class="result-card">
+            @if (ViewBag.IsSuccessful == true)
+            {
+                <div class="result-success">
+                    <div class="result-icon success">✓</div>
+                    <h1>Ödeme Başarılı</h1>
+                    <p class="result-message">İşleminiz başarıyla tamamlanmıştır.</p>
 
-<p>@ViewBag.Message</p>
+                    @if (!string.IsNullOrEmpty(ViewBag.TrxCode?.ToString()))
+                    {
+                        <div class="transaction-details">
+                            <div class="detail-row">
+                                <span class="detail-label">İşlem Numarası:</span>
+                                <span class="detail-value">@ViewBag.TrxCode</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(ViewBag.Amount?.ToString()) && !string.IsNullOrEmpty(ViewBag.Currency?.ToString()))
+                            {
+                                <div class="detail-row">
+                                    <span class="detail-label">Tutar:</span>
+                                    <span class="detail-value">@ViewBag.Amount @ViewBag.Currency</span>
+                                </div>
+                            }
+                            <div class="detail-row">
+                                <span class="detail-label">Tarih:</span>
+                                <span class="detail-value">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="result-error">
+                    <div class="result-icon error">✕</div>
+                    <h1>İşlem Başarısız</h1>
+                    <p class="result-message">
+                        @if (!string.IsNullOrEmpty(ViewBag.ResultMessage?.ToString()))
+                        {
+                            @ViewBag.ResultMessage
+                        }
+                        else
+                        {
+                            @(Html.Raw("Ödeme işlemi tamamlanamadı. Lütfen tekrar deneyiniz."))
+                        }
+                    </p>
 
-<a href="@Url.Action("Pay3d", "DealerPayment")">Yeni Ödeme Yap</a>
+                    @if (!string.IsNullOrEmpty(ViewBag.ResultCode?.ToString()))
+                    {
+                        <div class="error-details">
+                            <small>Hata Kodu: @ViewBag.ResultCode</small>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="result-actions">
+                <a href="@Url.Action("Pay3d", "DealerPayment")" class="btn btn-primary">
+                    Yeni İşlem
+                </a>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    Yazdır
+                </button>
+            </div>
+
+            @if (System.Web.HttpContext.Current.IsDebuggingEnabled)
+            {
+                @*<div class="debug-section">
+                    <h3>Debug Bilgileri</h3>
+                    <div class="debug-info">
+                        <div><strong>İstek Metodu:</strong> @Request.HttpMethod</div>
+                        <div><strong>URL:</strong> @Request.Url</div>
+                        <div><strong>isSuccessful:</strong> @Request["isSuccessful"]</div>
+                        <div><strong>resultCode:</strong> @Request["resultCode"]</div>
+                        <div><strong>resultMessage:</strong> @Request["resultMessage"]</div>
+                        <div><strong>trxCode:</strong> @Request["trxCode"]</div>
+                        <div><strong>amount:</strong> @Request["amount"]</div>
+                        <div><strong>currency:</strong> @Request["currency"]</div>
+                    </div>
+                </div>*@
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .result-page {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        padding: 40px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .result-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        text-align: center;
+    }
+
+    .result-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 40px;
+        font-weight: bold;
+        color: white;
+    }
+
+        .result-icon.success {
+            background-color: #28a745;
+        }
+
+        .result-icon.error {
+            background-color: #dc3545;
+        }
+
+    .result-success h1 {
+        color: #28a745;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 15px 0;
+    }
+
+    .result-error h1 {
+        color: #dc3545;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 15px 0;
+    }
+
+    .result-message {
+        font-size: 18px;
+        color: #6c757d;
+        margin-bottom: 30px;
+        line-height: 1.5;
+    }
+
+    .transaction-details {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 30px 0;
+        text-align: left;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+    .detail-label {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .detail-value {
+        font-weight: 500;
+        color: #212529;
+    }
+
+    .error-details {
+        background-color: #f8d7da;
+        border: 1px solid #f1aeb5;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 20px 0;
+        color: #721c24;
+    }
+
+    .result-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 4px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            transform: translateY(-1px);
+        }
+
+    .debug-section {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px dashed #dee2e6;
+        text-align: left;
+    }
+
+        .debug-section h3 {
+            color: #495057;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+    .debug-info {
+        background-color: #2d3748;
+        color: #e2e8f0;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .debug-info div {
+            margin-bottom: 5px;
+        }
+
+        .debug-info strong {
+            color: #90cdf4;
+        }
+
+    @@media (max-width: 768px) {
+        .result-page {
+            padding: 20px 0;
+        }
+
+        .container {
+            padding: 0 15px;
+        }
+
+        .result-card {
+            padding: 30px 20px;
+        }
+
+        .result-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+
+    @@media print {
+        .result-actions, .debug-section {
+            display: none;
+        }
+
+        .result-page {
+            background: white;
+        }
+
+        .result-card {
+            box-shadow: none;
+        }
+    }
+</style>
